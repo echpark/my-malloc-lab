@@ -15,23 +15,23 @@
 #include "config.h"
 
 /* private variables */
-static char *mem_start_brk;  /* points to first byte of heap */
-static char *mem_brk;        /* points to last byte of heap */
-static char *mem_max_addr;   /* largest legal heap address */ 
+static char *mem_start_brk;  /* 힙의 첫 번째 바이트를 가리키는 포인터 */
+static char *mem_brk;        /* 현재 힙의 끝(마지막 바이트 + 1)을 가리키는 포인터 */
+static char *mem_max_addr;   /* 허용 가능한 힙 최대 주소 + 1  */ 
 
 /* 
- * mem_init - initialize the memory system model
+ * mem_init - 메모리 시스템 모델 초기화
  */
 void mem_init(void)
 {
     /* allocate the storage we will use to model the available VM */
     if ((mem_start_brk = (char *)malloc(MAX_HEAP)) == NULL) {
-	fprintf(stderr, "mem_init_vm: malloc error\n");
-	exit(1);
+        fprintf(stderr, "mem_init_vm: malloc error\n");
+        exit(1);
     }
 
-    mem_max_addr = mem_start_brk + MAX_HEAP;  /* max legal heap address */
-    mem_brk = mem_start_brk;                  /* heap is empty initially */
+    mem_max_addr = mem_start_brk + MAX_HEAP;  /* 힙 최대 주소 설정 */
+    mem_brk = mem_start_brk;                  /* 힙 끝을 힙 시작과 동일하게 초기화 */
 }
 
 /* 
@@ -51,21 +51,23 @@ void mem_reset_brk()
 }
 
 /* 
- * mem_sbrk - simple model of the sbrk function. Extends the heap 
- *    by incr bytes and returns the start address of the new area. In
- *    this model, the heap cannot be shrunk.
+ * mem_sbrk - sbrk 함수의 간단한 모델
+ *            힙을 incr 바이트만큼 확장하고,
+ *            새 영역의 시작 주소를 반환한다.
+ *            이 모델에서는 힙을 줄일 수 없다.
  */
 void *mem_sbrk(int incr) 
 {
     char *old_brk = mem_brk;
 
-    if ( (incr < 0) || ((mem_brk + incr) > mem_max_addr)) {
-	errno = ENOMEM;
-	fprintf(stderr, "ERROR: mem_sbrk failed. Ran out of memory...\n");
-	return (void *)-1;
+    if ((incr < 0) || ((mem_brk + incr) > mem_max_addr)) {
+        errno = ENOMEM; /* 메모리 부족 에러 설정 */
+        fprintf(stderr, "ERROR: mem_sbrk failed. Ran out of memory...\n");
+        return (void *)-1; /* 실패 시 -1 반환 */
     }
-    mem_brk += incr;
-    return (void *)old_brk;
+
+    mem_brk += incr; /* 힙 포인터를 incr만큼 증가 */
+    return (void *)old_brk; /* 확장 전 힙 포인터 반환 */
 }
 
 /*
